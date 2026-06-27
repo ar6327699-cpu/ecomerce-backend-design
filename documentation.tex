@@ -1,0 +1,331 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+
+% Color definitions for code styling
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.96}
+
+% Listings settings
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4
+}
+\lstset{style=mystyle}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Django E-Commerce Backend Design Documentation},
+    pdfpagemode=FullScreen,
+}
+
+% Title details
+\title{
+    \textbf{Django E-Commerce Backend Design}\\
+    \large{Comprehensive Project & Implementation Documentation}\\
+    \vspace{1cm}
+    \includegraphics[width=0.4\textwidth]{https://via.placeholder.com/150} % Dummy logo/placeholder
+}
+\author{\textbf{Abdul} \\ Ecommerce Developer}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\chapter{Introduction \& Architecture}
+
+\section{Project Overview}
+This project is a complete, progressive implementation of a lightweight E-Commerce Backend application designed and built using the Python Django web framework. The development cycle spans three distinct stages (referred to as Weeks), where the system evolves from a static HTML mock-up using in-memory data to a fully dynamic database-backed web application complete with search systems, pagination, and user authentication management.
+
+\section{Target Audience \& Goals}
+The main purpose of this implementation is to showcase:
+\begin{itemize}
+    \item Progressive feature addition in modern web applications.
+    \item Clean separation of concerns using the Model-View-Template (MVT) architecture.
+    \item Integration of Django's default SQLite database for dynamic records.
+    \item Implementation of standard user flows such as user signup, authenticated product additions, search filtering, and paginated navigation.
+\end{itemize}
+
+\section{System Architecture (Django MVT)}
+The backend operates strictly under the Django Model-View-Template design pattern:
+\begin{description}
+    \item[Models] Defines the database schema. In our application, the \texttt{Product} model represents catalog items.
+    \item[Views] Handles the request/response lifecycle, queries database tables, implements filters, and passes contextual data to templates.
+    \item[Templates] Renders raw HTML files integrated with Django template tag logic (e.g., conditional navigation loops and context injection).
+\end{description}
+
+---
+
+\chapter{Progressive Development Stages}
+
+\section{Week 1: Static Layout \& Views}
+In the first week of development, focus is placed on design layouts and routing basics.
+\begin{itemize}
+    \item \textbf{Data Storage:} Memory-based list representation (\texttt{SAMPLE\_PRODUCTS}) inside the views.
+    \item \textbf{Endpoints:} Homepage displaying featured items, shop category list, and detailed product profile paths.
+    \item \textbf{Limitation:} Changes to the product catalog are not persistent because no database backend is active.
+\end{itemize}
+
+\section{Week 2: Dynamic Layout \& Database Integration}
+The second stage migrates static arrays into the database engine.
+\begin{itemize}
+    \item \textbf{Database Engine:} SQLite3 is configured. Django models are compiled, and migrations are applied to create tables.
+    \item \textbf{Search Capability:} A search bar checks user input against product names and categories using Django's \texttt{Q} queries (\texttt{name\_\_icontains} and \texttt{category\_\_icontains}).
+\end{itemize}
+
+\section{Week 3: Final Production Features}
+The final week optimizes UX and security.
+\begin{itemize}
+    \item \textbf{Pagination:} Prevents page bloating by limiting visibility to two products per page. This enforces pagination logic and simplifies tests.
+    \item \textbf{Authentication System:} Implements core login/signup components.
+    \item \textbf{Authorization Guards:} Adds security rules prohibiting anonymous guests from posting new items via \texttt{@login\_required} decorators on writing views.
+\end{itemize}
+
+---
+
+\chapter{Database Schema \& Design}
+
+\section{Product Model Fields}
+The primary database entity is the \texttt{Product} table. The attributes are defined in \texttt{models.py} as follows:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Field Name} & \textbf{Data Type} & \textbf{Constraints} & \textbf{Purpose} \\ \midrule
+\texttt{id} & AutoField (Primary Key) & Auto-increment & Unique ID of product \\
+\texttt{name} & CharField & Max length = 200 & Title of the catalog item \\
+\texttt{price} & DecimalField & Max digits = 10, places = 2 & Item price \\
+\texttt{category} & CharField & Max length = 100 & Product category grouping \\
+\texttt{image} & URLField & Max length = 500 & Link to item cover image \\
+\texttt{description} & TextField & No size limit & Detailed descriptions \\
+\texttt{stock} & IntegerField & Default = 10 & Number of units in inventory \\
+\bottomrule
+\end{tabular}
+\caption{Product Model Field Definitions}
+\label{tab:product_model}
+\end{table}
+
+\section{Database Migrations Workflow}
+Whenever changes are made to models, Django propagates them through migrations:
+\begin{lstlisting}[language=bash]
+# Creates migration instructions
+python manage.py makemigrations
+
+# Applies structural changes to database file (sqlite3)
+python manage.py migrate
+\end{lstlisting}
+
+---
+
+\chapter{Core Features Implementation Details}
+
+\section{Search Query Filtering}
+We use Django's \texttt{Q} objects to query the backend database for matches against both product titles and category designations in a case-insensitive search format.
+\begin{lstlisting}[language=python]
+# View snippet executing the search
+products_list = Product.objects.filter(Q(name__icontains=query) | Q(category__icontains=query))
+\end{lstlisting}
+
+\section{Testing-oriented Pagination}
+For efficient pagination testing, the paginator threshold is set to 2 products per page.
+\begin{lstlisting}[language=python]
+paginator = Paginator(products_list, 2) 
+page_number = request.GET.get('page')
+page_obj = paginator.get_page(page_number)
+\end{lstlisting}
+
+\section{Authorization Guarding}
+Adding a product involves updating the database, which requires a validated session. The view is locked using Django's security middleware:
+\begin{lstlisting}[language=python]
+@login_required
+def add_product_view(request):
+    # Form processing logic here...
+\end{lstlisting}
+
+---
+
+\chapter{Source Code Reference (Week 3 - Final)}
+
+Here are the complete backend source codes for the final week implementation.
+
+\section{Database Models (\texttt{models.py})}
+\begin{lstlisting}[language=python, caption=models.py]
+from django.db import models
+
+class Product(models.Model):
+    name = models.CharField(max_length=200)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    category = models.CharField(max_length=100)
+    image = models.URLField(max_length=500, default="https://via.placeholder.com/150")
+    description = models.TextField()
+    stock = models.IntegerField(default=10)
+
+    def __str__(self):
+        return self.name
+\end{lstlisting}
+
+\section{System Views Routing Controller (\texttt{views.py})}
+\begin{lstlisting}[language=python, caption=views.py]
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q
+from .models import Product
+
+# 1. Home View
+def home_view(request):
+    featured_products = Product.objects.all()[:2]
+    return render(request, 'index.html', {'featured_products': featured_products})
+
+# 2. Product List View with Search AND Pagination
+def product_list_view(request):
+    query = request.GET.get('q', '')
+    if query:
+        products_list = Product.objects.filter(Q(name__icontains=query) | Q(category__icontains=query))
+    else:
+        products_list = Product.objects.all()
+
+    # Pagination: 2 products per page
+    paginator = Paginator(products_list, 2) 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'products.html', {'page_obj': page_obj, 'query': query})
+
+# 3. Product Detail View
+def product_detail_view(request, product_id):
+    product = get_object_or_404(Product, pk=product_id)
+    return render(request, 'product-detail.html', {'product': product})
+
+# 4. Signup View
+def signup_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
+
+# 5. Add Product View (Restricted to logged-in users)
+@login_required
+def add_product_view(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        price = request.POST['price']
+        category = request.POST['category']
+        description = request.POST['description']
+        stock = request.POST['stock']
+        image = request.POST.get('image', '')
+        if not image.strip():
+            image = "https://via.placeholder.com/150"
+        
+        Product.objects.create(
+            name=name, 
+            price=price, 
+            category=category, 
+            description=description, 
+            stock=stock,
+            image=image
+        )
+        return redirect('product_list')
+        
+    return render(request, 'add-product.html')
+\end{lstlisting}
+
+\section{Endpoint URL Mapping Controller (\texttt{urls.py})}
+\begin{lstlisting}[language=python, caption=urls.py]
+from django.contrib import admin
+from django.urls import path, include
+from django.contrib.auth import views as auth_views
+from . import views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', views.home_view, name='home'),
+    path('products/', views.product_list_view, name='product_list'),
+    path('products/<int:product_id>/', views.product_detail_view, name='product_detail'),
+    path('products/add/', views.add_product_view, name='add_product'),
+    
+    # Auth Routes
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('signup/', views.signup_view, name='signup'),
+]
+\end{lstlisting}
+
+---
+
+\chapter{Installation \& Execution Guide}
+
+\section{Environment Configuration}
+To deploy the backend database server locally:
+\begin{enumerate}
+    \item Clone or download project files.
+    \item Install packages needed using the terminal window:
+    \begin{lstlisting}[language=bash]
+    pip install django
+    \end{lstlisting}
+    \item Change directory to Week 3 (Final implementation):
+    \begin{lstlisting}[language=bash]
+    cd week-3-final
+    \end{lstlisting}
+\end{enumerate}
+
+\section{Database setup and Superuser Creation}
+Generate the schema tables and configure custom login profiles:
+\begin{lstlisting}[language=bash]
+# Compile DB structural mapping 
+python manage.py migrate
+
+# Configure Admin account credentials
+python manage.py createsuperuser
+\end{lstlisting}
+
+\section{Run Development Server}
+Run the web application locally:
+\begin{lstlisting}[language=bash]
+python manage.py runserver
+\end{lstlisting}
+The local address is \url{http://127.0.0.1:8000/}.
+
+---
+
+\chapter{Conclusion}
+This Django project serves as a step-by-step model showing how static websites evolve into dynamic e-commerce solutions. The current version builds a solid base with authentication, product forms, pagination, and data querying. Future versions can expand on this by adding shopping carts, payment gateways (like Stripe), and responsive tailwind UI styles.
+
+\end{document}
