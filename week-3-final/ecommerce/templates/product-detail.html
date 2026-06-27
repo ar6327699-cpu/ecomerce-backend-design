@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    {% include 'base_nav.html' %}
+
+    <div class="container">
+        <div class="detail-container" style="margin-top: 30px;">
+            <div class="detail-img">
+                <img src="{{ product.image }}" alt="{{ product.name }}">
+            </div>
+            <div class="detail-info">
+                <span style="color: #666; font-size: 0.95rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">{{ product.category }}</span>
+                <h2 style="text-align: left; margin: 10px 0; font-size: 2.2rem; font-weight: 700; color: #111;">{{ product.name }}</h2>
+                <p class="price" style="font-size: 1.8rem; margin: 15px 0;">${{ product.price }}</p>
+                <div style="background: #fff; border-left: 4px solid #f0c14b; padding: 15px; margin: 20px 0; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                    <p style="line-height: 1.6; color: #444; font-size: 1.05rem;">{{ product.description }}</p>
+                </div>
+                <p style="margin-bottom: 25px; font-weight: bold; color: {% if product.stock > 0 %}#2e7d32{% else %}#c62828{% endif %}; font-size: 1.1rem;">
+                    Availability: {% if product.stock > 0 %}{{ product.stock }} in Stock{% else %}Out of Stock{% endif %}
+                </p>
+                <div style="display: flex; gap: 15px;">
+                    <a href="{% url 'product_list' %}" class="btn" style="background: #e0e0e0; border: 1px solid #ccc; font-weight: 600;">&larr; Back to Shop</a>
+                    {% if product.stock > 0 %}
+                        <button class="btn" onclick="alert('Added to cart (Demo)!')" style="flex-grow: 1; font-weight: 600;">Add to Cart</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
